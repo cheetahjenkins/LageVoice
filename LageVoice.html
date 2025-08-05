@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <button id="start-btn">Start Transcription</button>
+    <button id="stop-btn" disabled>Stop Transcription</button>
+
+    <h2>Transcription:</h2>
+    <div id="transcript" style="border: 1px solid #ccc; padding: 10px; min-height: 100px;"></div>
+
+    <ul id="transcriptList"></ul>
+
+    <script>
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const transcriptDiv = document.getElementById('transcript');
+        const transcriptList = document.getElementById("transcriptList")
+
+        let recognition;
+        let finalTranscript = '';
+
+        // Browser Support Check
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            alert('Speech Recognition is not supported in this browser.');
+        } else {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript + ' ';
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+                transcriptDiv.innerHTML = finalTranscript + '<span style="color: gray;">' + interimTranscript + '</span>';
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech Recognition Error:', event.error);
+            };
+        }
+
+        function AddTranscriptToList(){
+            const transcriptToAdd = document.createElement("li");
+            const deleteButton = document.createElement("button");
+            deleteButton.textContent = "delete transaction"
+
+            deleteButton.addEventListener("click", ()=> {
+                transcriptToAdd.remove();
+            });
+
+
+            transcriptToAdd.innerHTML = finalTranscript;
+            transcriptList.appendChild(transcriptToAdd);
+            transcriptToAdd.appendChild(deleteButton);
+        }
+
+        // Start Transcription
+        startBtn.addEventListener('click', () => {
+            finalTranscript = ''; // Reset transcript for new session
+            transcriptDiv.innerHTML = '';
+            recognition.start();
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+        });
+
+        // Stop Transcription
+        stopBtn.addEventListener('click', () => {
+            recognition.stop();
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            
+            AddTranscriptToList();
+            
+            });
+
+    </script>
+</body>
+</html>
+
